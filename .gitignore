@@ -1,1 +1,4 @@
 .DS_Store
+data/logi-data/* !data/logi-data/.gitkeep
+data/prometheus-data/* !data/prometheus-data/.gitkeep
+data/tempo-data/* !data/tempo-data/.gitkeep
