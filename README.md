@@ -16,5 +16,7 @@ LGMT Stack with Opentelemetry collector
     docker-compose -f monitoring.yml up
 
 Opentelemetry collector listen on port `4317` and `4318`
+
 Grafana dashboard available on `localhost:3000`
+
 Grafana default username: `admin` password: `admin`
