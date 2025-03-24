@@ -1,2 +1,4 @@
 .DS_Store
-/data/
+/data/loki/
+/data/prometheus/
+/data/tempo/
