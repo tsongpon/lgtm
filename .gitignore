@@ -1,4 +1,2 @@
 .DS_Store
-data/loki/* !data/loki/.gitkeep
-data/prometheus/* !data/prometheus/.gitkeep
-data/tempo/* !data/tempo/.gitkeep
+/data/
