@@ -1,0 +1,129 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.82.0
+    restart: always
+    command:
+      - --config=/etc/otelcol-cont/otel-collector.yaml
+    volumes:
+      - ./config/collector/otel-collector.yaml:/etc/otelcol-cont/otel-collector.yaml
+    ports:
+      - "1888:1888" # pprof extension
+      - "8888:8888" # Prometheus metrics exposed by the collector
+      - "8889:8889" # Prometheus exporter metrics
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "55679:55679" # zpages extension
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    restart: always
+    user: root
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
+    volumes:
+      # - ./config/prometheus/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
+    ports:
+      - 9090:9090
+  
+  loki:
+    user: root
+    image: grafana/loki:3.4.2
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./config/loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - ./data/loki:/data
+
+  tempo:
+    image: grafana/tempo:2.7.0
+    user: root
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    ports:
+      - 9096:9096
+    volumes:
+      - ./config/tempo/tempo-config.yaml:/etc/tempo.yaml
+      - ./data/tempo:/tmp/tempo
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    ports:
+      - "3000:3000"
+
+  config-server:
+    image: tsongpon/config-server:0.0.6
+    environment:
+      - OTEL_SERVICE_NAME=config-server
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=config-server,service.instance.id=config-server_1,env=dev
+      - OTEL_METRIC_EXPORT_INTERVAL=500
+      - OTEL_BSP_SCHEDULE_DELAY=500
+      - OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION=explicit_bucket_histogram
+      - OTEL_SEMCONV_STABILITY_OPT_IN=http
+    deploy:
+      replicas: 1
+      update_config:
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  name-service:
+    image: tsongpon/name-service:0.0.14
+    environment:
+      - OTEL_SERVICE_NAME=name-service
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=name-service,service.instance.id=name-service_1,env=dev
+      - OTEL_METRIC_EXPORT_INTERVAL=500
+      - OTEL_BSP_SCHEDULE_DELAY=500
+      - OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION=explicit_bucket_histogram
+      - OTEL_SEMCONV_STABILITY_OPT_IN=http
+    deploy:
+      replicas: 1
+      update_config:
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  greeting-service:
+    image: tsongpon/greeting-service:0.0.7
+    environment:
+      - OTEL_SERVICE_NAME=greeting-service
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=greeting-service,service.instance.id=greeting-service_1,env=dev
+      - OTEL_METRIC_EXPORT_INTERVAL=500
+      - OTEL_BSP_SCHEDULE_DELAY=500
+      - OTEL_EXPORTER_OTLP_METRICS_DEFAULT_HISTOGRAM_AGGREGATION=explicit_bucket_histogram
+      - OTEL_SEMCONV_STABILITY_OPT_IN=http
+    ports:
+      - 9002:9002
+    deploy:
+      replicas: 1
+      update_config:
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
